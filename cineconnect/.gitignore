@@ -1,0 +1,7 @@
+target/
+config/db.properties
+*.iml
+.idea/
+.classpath
+.project
+.settings/
