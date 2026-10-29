@@ -66,6 +66,13 @@ public class CustomerFrame extends JFrame {
         }
     });
     private final Timer ticker = new Timer(1000, e -> tick());
+    // Other copies of the app live in other processes and cannot reach our in-memory event bus,
+    // so the seat map is also re-read from the database every few seconds.
+    private final Timer poller = new Timer(5000, e -> {
+        if (currentShow != null) {
+            refreshSeats();
+        }
+    });
 
     public CustomerFrame(AppContext ctx, User user) {
         super(user.getDashboardTitle());
@@ -97,11 +104,13 @@ public class CustomerFrame extends JFrame {
 
         ctx.getEventBus().subscribe(listener);
         ticker.start();
+        poller.start();
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
                 ctx.getEventBus().unsubscribe(listener);
                 ticker.stop();
+                poller.stop();
             }
         });
         loadShows();

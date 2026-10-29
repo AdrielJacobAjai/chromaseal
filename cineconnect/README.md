@@ -11,7 +11,7 @@ PBCST 304 Project, Group 8, Model Engineering College.
 - **Best-seat recommendation**: "Recommend best seats" suggests a block of seats together, near the centre and mid-hall.
 - **Admin dashboard**: overall occupancy, per-show occupancy and revenue, busiest show timings, revenue by movie.
 - Admin and Customer roles; PBKDF2-hashed passwords.
-- Live updates: if another customer takes a seat, your seat map refreshes.
+- Live updates: the seat map refreshes instantly for changes made inside the running app (Observer pattern, e.g. a hold timing out) and every 5 seconds for changes made by other copies of the app.
 
 ## Run it
 You need JDK 17+, Maven (or let IntelliJ/Eclipse handle Maven) and a MySQL server.

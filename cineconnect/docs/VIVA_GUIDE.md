@@ -92,7 +92,8 @@ Only one `Database` object exists; `Database.getInstance()` returns it. Construc
 
 ### 3. Observer, `SeatEventBus` / `SeatEventListener`
 `SeatEventBus` is the *subject*; screens are *observers*. A screen calls `subscribe(listener)`. When `BookingService` changes any seat it calls `publish(showId)`, and every subscribed screen is told `onSeatsChanged(showId)` and redraws its seat map.
-*Effect:* when customer A takes a seat, customer B's screen turns it orange/red without pressing refresh.
+*Effect:* when a seat changes inside the running app (the customer's own hold or payment, the 2-minute sweeper freeing a hold, a cancellation) every subscribed screen redraws immediately.
+*Limitation (be honest if asked):* the bus lives in one program's memory. A second copy of the app is a different process and cannot hear it, so each customer screen also re-reads the seats from MySQL every 5 seconds (`poller` timer in `CustomerFrame`). Observer = instant in-process updates; polling = updates from other machines.
 *Implementation detail:* a `CopyOnWriteArrayList` so threads can add/remove listeners safely during notification. Swing updates are pushed onto the UI thread with `SwingUtilities.invokeLater`.
 
 ### 4. Strategy, pricing and recommendation
@@ -280,7 +281,7 @@ Seat type comes from the database as a string; the factory creates the right sub
 A single shared configuration point. (If asked about downsides: global state makes testing harder, which is why `configure()` exists.)
 
 **Q: How does the seat map update live?**
-Observer pattern: the service publishes on `SeatEventBus`; each open screen subscribed as a `SeatEventListener` and redraws.
+Observer pattern: the service publishes on `SeatEventBus`; each open screen subscribed as a `SeatEventListener` and redraws. That covers changes inside one running app (e.g. the hold sweeper freeing a seat). Other copies of the app are separate processes, so screens also poll the database every 5 seconds.
 
 **Q: What is Strategy and where is it used?**
 Interchangeable algorithms behind an interface: pricing (standard/weekend) and seat recommendation. We can swap them without editing `BookingService`.
@@ -330,4 +331,4 @@ Keep the `service` layer unchanged and replace `ui` with controllers; this is ex
 | Tests | `src/test/java/com/cineconnect/` |
 | UML | `docs/CLASS_DIAGRAM.md` |
 
-**Tip:** run the app on two copies, hold a seat on one, and show it turning orange on the other. That demonstrates the whole concurrency and Observer story in 10 seconds.
+**Tip:** run the app on two computers (or two copies), hold a seat on one, and within 5 seconds it turns orange on the other, then try to hold it there and show the "no longer available" message. For Observer specifically, hold a seat, wait 2 minutes without paying and watch the countdown end and the seat free itself without pressing anything.
